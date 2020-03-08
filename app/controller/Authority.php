@@ -17,6 +17,6 @@ class Authority extends BaseController
         View::assign([
             'editData' => '{}'
         ]);
-        View::fetch();
+        return View::fetch();
     }
 }
