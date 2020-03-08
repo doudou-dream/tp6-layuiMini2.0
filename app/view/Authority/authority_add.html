@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>新增菜单权限</title>
+    {include file="public/header" /}
+</head>
+<body>
+<div class="layuimini-container">
+    <div class="layuimini-main">
+        <form class="layui-form" action="" lay-filter="example">
+            <div class="layui-form-item">
+                <label class="layui-form-label">选择父标签</label>
+                <div class="layui-input-block">
+                    <select id="pid" name="pid" lay-verify="required" lay-search="">
+                        <option value="">直接选择或搜索选择</option>
+                        <option value="-1">顶级菜单</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">标题</label>
+                <div class="layui-input-block">
+                    <input type="text" name="title" lay-verify="required" autocomplete="off" placeholder="请输入标题"
+                           class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">图标</label>
+                <div class="layui-input-block">
+                    <input type="text" name="icon" autocomplete="off" placeholder="请输入图标"
+                           class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">url</label>
+                <div class="layui-input-block">
+                    <input type="text" name="href" autocomplete="off" placeholder="请输入url"
+                           class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">排序</label>
+                <div class="layui-input-block">
+                    <input type="number" name="sort" value="0" lay-verify="number" autocomplete="off"
+                           placeholder="数字越大排名越靠前"
+                           class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">菜单</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" name="is_menu" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button class="layui-btn" lay-submit="" lay-filter="submit">立即提交</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="__LAYUI_MINI__/lib/layui-v2.5.5/layui.js" charset="utf-8"></script>
+<script>
+    let postUrl = `{__SELF__}`;
+    let editData = JSON.parse(`{$editData}`);
+    let selectData = JSON.parse(`{}`);
+    layui.use(['form'], function () {
+        let ajaxData = {};
+        let form = layui.form
+            , layer = layui.layer
+            , $ = layui.jquery;
+
+        //监听提交
+        form.on('submit(submit)', function (data) {
+            ajaxData.code = 'add';
+            if (editData !== false) {
+                ajaxData.id = editData.id;
+                ajaxData.code = 'save';
+            }
+            $.each(data.field, function (k, v) {
+                if (k == 'is_menu') {
+                    v = (v == 'on') ? 1 : 0;
+                }
+                ajaxData[k] = v;
+            });
+            $.ajax({
+                url: postUrl,
+                type: 'POST',
+                data: ajaxData,
+                success(res) {
+                    // res = JSON.parse(res);
+                    layer.msg(res.msg);
+                    if (res.code != -1) {
+                        setTimeout(function () {
+                            location.reload();
+                        }, 2000);
+                    }
+                }
+            });
+            return false;
+        });
+
+        //动态加载select表单
+        if (JSON.stringify(selectData) !== '{}') {
+            let temp = '<option value="">直接选择或搜索选择</option><option value="0">顶级菜单</option>';
+            selectData.map(item => {
+                temp += `<option ${item.id == editData.pid ? 'selected' : ''} value="${item.id}">${item.title}(${item.href})</option>`;
+            });
+            $('#pid').html(temp);
+            if (editData.pid == 0) {
+                $('#pid').val(editData.pid);
+            }
+            form.render('select');
+        }
+
+        //表单初始赋值
+        form.val('example', {
+            "is_menu": (editData.is_menu == 0) ? false : true, //开关状态
+            "title": editData.title,
+            "href": editData.href,
+            "sort": editData.sort ? editData.sort : 0,
+            "icon": editData.icon,
+        });
+    })
+    ;
+</script>
+
+</body>
+</html>

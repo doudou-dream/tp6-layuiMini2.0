@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>权限菜单</title>
+    {include file="public/header" /}
+    <style>
+        .layui-btn:not(.layui-btn-lg ):not(.layui-btn-sm):not(.layui-btn-xs) {
+            height: 34px;
+            line-height: 34px;
+            padding: 0 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="layuimini-container">
+    <div class="layuimini-main">
+        <div>
+            <div class="layui-btn-group">
+                <button class="layui-btn" id="btn-expand">全部展开</button>
+                <button class="layui-btn" id="btn-fold">全部折叠</button>
+                <button class="layui-btn" id="data-role">角色管理</button>
+            </div>
+            <table id="munu-table" class="layui-table" lay-filter="munu-table"></table>
+        </div>
+    </div>
+</div>
+<!-- 操作列 -->
+<script type="text/html" id="auth-state">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+<script src="__LAYUI_MINI__/lib/layui-v2.5.5/layui.js" charset="utf-8"></script>
+<script src="__LAYUI_MINI__/js/lay-config.js?v=1.0.4" charset="utf-8"></script>
+<script>
+
+    layui.use(['table', 'treetable'], function () {
+        //post访问地址
+        let selfUrl = `{__SELF__}`;
+        //新增目录
+        let authorityMenuAdd = `{$authorityMenuAdd}`;
+        let roleUrl = `{$roleUrl}`;
+        let debugJys = `{DEBUG_JYS}`;//调试模式
+        var $ = layui.jquery;
+        var table = layui.table;
+        var treetable = layui.treetable;
+        let colsDebug = {templet: '#auth-state', width: 120, align: 'center', title: '操作'};
+        let cols = [
+            {type: 'numbers'},
+            {field: 'title', minWidth: 200, title: '权限名称'},
+            {field: 'href', title: '菜单url'},
+            {field: 'sort', width: 80, align: 'center', title: '排序号'},
+            {
+                field: 'isMenu', width: 80, align: 'center', templet: function (d) {
+                    if (d.pid == 0) {
+                        return '<span class="layui-badge layui-bg-blue">目录</span>';
+                    } else if (d.is_menu == 1) {
+                        return '<span class="layui-badge layui-bg-gray">菜单</span>';
+                    } else {
+                        return '<span class="layui-badge-rim">按钮</span>';
+                    }
+                }, title: '类型'
+            },
+        ];
+        if (debugJys) {
+            cols.push(colsDebug);
+        }
+        // 渲染表格
+        layer.load(2);
+        treetable.render({
+            treeColIndex: 1,
+            treeSpid: 0,
+            toolbar: '#toolbar-id',
+            defaultToolbar: ['filter',],
+            treeIdName: 'id',
+            treePidName: 'pid',
+            elem: '#munu-table',
+            url: selfUrl,
+            method: 'POST',
+            showCheckbox: true, //是否显示复选框
+            where: {
+                code: 'menuData',
+            },
+            page: false,
+            cols: [cols],
+            done: function () {
+                layer.closeAll('loading');
+            }
+        });
+
+        $('#btn-expand').click(function () {
+            treetable.expandAll('#munu-table');
+        });
+
+        $('#btn-fold').click(function () {
+            treetable.foldAll('#munu-table');
+        });
+
+        // 监听角色操作
+        $("#data-role").on("click", function () {
+
+            var index = layer.open({
+                title: '角色列表',
+                type: 2,
+                shade: 0.2,
+                maxmin: true,
+                shadeClose: true,
+                area: ['50%', '50%'],
+                content: roleUrl,
+            });
+
+            return false;
+        });
+
+        //监听工具条
+        table.on('tool(munu-table)', function (obj) {
+            var data = obj.data;
+            var layEvent = obj.event;
+            switch (layEvent) {
+                case 'del':
+                    layer.confirm('是否确认删除? ', function (index) {
+                        $.ajax({
+                            url: selfUrl,
+                            type: 'POST',
+                            data: {code: 'del', id: data.id},
+                            success(res) {
+                                res = JSON.parse(res);
+                                layer.msg(res.msg);
+                                if (res !== -1) {
+                                    obj.del();
+                                }
+                            }
+                        });
+                        // layer.msg('删除' + data.id);
+                        layer.close(index);
+                    });
+                    break;
+                case 'edit':
+                    let index = layer.open({
+                        title: '修改用户',
+                        type: 2,
+                        shade: 0.2,
+                        maxmin: true,
+                        shadeClose: true,
+                        area: ['50%', '50%'],
+                        content: authorityMenuAdd + '&id=' + data.id,
+                    });
+                    break;
+            }
+        });
+
+    });
+</script>
+</body>
+</html>

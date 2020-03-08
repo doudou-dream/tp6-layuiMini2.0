@@ -23,7 +23,7 @@
           "child": [
             {
               "title": "主页一",
-              "href": "page/welcome-1.html",
+              "href": "index",
               "icon": "fa fa-tachometer",
               "target": "_self"
             },

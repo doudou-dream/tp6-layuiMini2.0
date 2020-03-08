@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>角色</title>
+    {include file="public/header" /}
+</head>
+<body>
+<div class="layuimini-container">
+    <div class="layuimini-main">
+
+        <fieldset class="table-search-fieldset">
+            <legend>搜索信息</legend>
+            <div style="margin: 10px 10px 10px 10px">
+                <form class="layui-form layui-form-pane" action="">
+                    <div class="layui-form-item">
+                        <div class="layui-inline">
+                            <label class="layui-form-label">名称</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="name" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <button type="submit" class="layui-btn layui-btn-primary" lay-submit
+                                    lay-filter="data-search-btn"><i class="layui-icon"></i> 搜 索
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </fieldset>
+
+        <script type="text/html" id="toolbarDemo">
+            <div class="layui-btn-container">
+                <button class="layui-btn layui-btn-sm data-add-btn" lay-event="add"> 添加</button>
+                <button class="layui-btn layui-btn-sm layui-btn-danger data-delete-btn"> 删除</button>
+            </div>
+        </script>
+
+        <table class="layui-hide" id="currentTableId" lay-filter="currentTableFilter"></table>
+
+        <script type="text/html" id="currentTableBar">
+            <a class="layui-btn layui-btn-xs data-count-edit" lay-event="edit">编辑</a>
+            <a class="layui-btn layui-btn-xs layui-btn-danger data-count-delete" lay-event="delete">删除</a>
+        </script>
+
+    </div>
+</div>
+<script src="__LAYUI_MINI__/lib/layui-v2.5.5/layui.js" charset="utf-8"></script>
+<script>
+    let selfUrl = `{__SELF__}`;
+    let roleAddUrl = `{$roleAddUrl}`;
+    layui.use(['form', 'table'], function () {
+        var $ = layui.jquery,
+            form = layui.form,
+            table = layui.table;
+
+        table.render({
+            elem: '#currentTableId',
+            method: 'POST',
+            where: {
+                code: 'roleData',
+            },
+            url: selfUrl,
+            toolbar: '#toolbarDemo',
+            defaultToolbar: ['filter'],
+            cols: [[
+                {type: "checkbox", width: 50, fixed: "left"},
+                {field: 'id', width: 80, title: 'ID', sort: true},
+                {field: 'name', title: '用户名'},
+                {field: 'create_time', title: '添加时间', sort: true},
+                {title: '操作', minWidth: 50, templet: '#currentTableBar', fixed: "right", align: "center"}
+            ]],
+            limits: [10, 15, 20, 25, 50, 100],
+            limit: 15,
+            page: false
+        });
+
+        // 监听搜索操作
+        form.on('submit(data-search-btn)', function (data) {
+            let search = data.field;
+            //执行搜索重载
+            table.reload('currentTableId', {
+                page: false
+                , where: {
+                    search
+                }
+            }, 'data');
+            return false;
+        });
+
+        // 监听添加操作
+        $(".data-add-btn").on("click", function () {
+
+            var index = layer.open({
+                title: '添加角色',
+                type: 2,
+                shade: 0.2,
+                maxmin: true,
+                shadeClose: true,
+                area: ['100%', '100%'],
+                content: roleAddUrl,
+            });
+
+            return false;
+        });
+
+        // 监听删除操作
+        $(".data-delete-btn").on("click", function () {
+            let ajaxData = {
+                code: 'roleDel',
+                delIds: []
+            };
+            var checkStatus = table.checkStatus('currentTableId')
+                , data = checkStatus.data;
+            layer.confirm('真的删除么', function (index) {
+                data.map(item => {
+                    ajaxData.delIds.push(item.id);
+                });
+                $.ajax({
+                    url: selfUrl,
+                    type: 'POST',
+                    data: ajaxData,
+                    success(res) {
+                        table.reload('currentTableId');
+                        console.log(res);
+                    }
+                });
+                layer.close(index);
+            });
+        });
+
+        //监听表格复选框选择
+        table.on('checkbox(currentTableFilter)', function (obj) {
+            console.log(obj)
+        });
+
+        table.on('tool(currentTableFilter)', function (obj) {
+            var data = obj.data;
+            console.log(data);
+            if (obj.event === 'edit') {
+
+                var index = layer.open({
+                    title: '编辑',
+                    type: 2,
+                    shade: 0.2,
+                    maxmin: true,
+                    shadeClose: true,
+                    area: ['100%', '100%'],
+                    content: roleAddUrl + '&id=' + data.id,
+                });
+                return false;
+            } else if (obj.event === 'delete') {
+                layer.confirm('确认删除该角色么', function (index) {
+                    $.ajax({
+                        url: selfUrl,
+                        type: 'POST',
+                        data: {code: 'roleDel', delIds: [data.id]},
+                        success(res) {
+                            // console.log(res);
+                            res = JSON.parse(res);
+                            layer.alert(res.msg);
+                            if (res.code != -1) {
+                                obj.del();
+                            }
+                        }
+                    });
+                    layer.close(index);
+                });
+            }
+        });
+
+    });
+</script>
+<script>
+
+</script>
+
+</body>
+</html>
